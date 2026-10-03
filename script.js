@@ -1,10 +1,24 @@
 
+// Firebase Configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAQjfrjAThP69iKfX3iKn-czPNR_JHl2LQ",
+  authDomain: "controle-financeiro-8955a.firebaseapp.com",
+  projectId: "controle-financeiro-8955a",
+  storageBucket: "controle-financeiro-8955a.firebasestorage.app",
+  messagingSenderId: "1012107734869",
+  appId: "1:1012107734869:web:573eb9871d4f56c08189dc"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 const NATUREZAS = {
   entrada: ["Salário", "Investimentos", "Freelance", "Presente", "Outros"],
   saida: ["Aluguel/Moradia", "Alimentação", "Transporte", "Saúde", "Lazer", "Educação", "Outros"]
 };
 
-let lancamentos = JSON.parse(localStorage.getItem('finance_data')) || [];
+let lancamentos = [];
 let pieChart, lineChart;
 
 // Elements
@@ -21,9 +35,43 @@ const btnClear = document.querySelector('#btn-clear');
 window.onload = () => {
   updateCategorias();
   populateFilterCategories();
-  renderDashboard();
+  initRealtimeListener();
   initCharts();
 };
+
+// --- Firebase Sync ---
+
+function initRealtimeListener() {
+  // Sincroniza em tempo real com o Firestore
+  db.collection('lancamentos').orderBy('data', 'desc')
+    .onSnapshot((snapshot) => {
+      lancamentos = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      renderDashboard();
+    }, (error) => {
+      console.error("Erro ao carregar dados: ", error);
+      alert("Erro de permissão: Certifique-se de que as Regras do Firestore estão em 'Modo Teste'.");
+    });
+}
+
+async function adicionarAoEstado(lancamento) {
+  try {
+    await db.collection('lancamentos').add(lancamento);
+  } catch (e) {
+    console.error("Erro ao salvar: ", e);
+    alert("Erro ao salvar no banco de dados.");
+  }
+}
+
+async function removerLancamento(id) {
+  try {
+    await db.collection('lancamentos').doc(id).delete();
+  } catch (e) {
+    console.error("Erro ao deletar: ", e);
+  }
+}
 
 // --- Logic ---
 
@@ -42,10 +90,9 @@ function populateFilterCategories() {
 tipoSelect.addEventListener('change', updateCategorias);
 updateCategorias();
 
-formLancamento.addEventListener('submit', (e) => {
+formLancamento.addEventListener('submit', async (e) => {
   e.preventDefault();
   const novo = {
-    id: Date.now(),
     descricao: document.querySelector('#descricao').value.trim(),
     valor: parseFloat(document.querySelector('#valor').value),
     tipo: tipoSelect.value,
@@ -53,22 +100,10 @@ formLancamento.addEventListener('submit', (e) => {
     data: document.querySelector('#data').value
   };
   
-  lancamentos.push(novo);
-  saveData();
-  renderDashboard();
+  await adicionarAoEstado(novo);
   formLancamento.reset();
   updateCategorias();
 });
-
-function saveData() {
-  localStorage.setItem('finance_data', JSON.stringify(lancamentos));
-}
-
-function removerLancamento(id) {
-  lancamentos = lancamentos.filter(l => l.id !== id);
-  saveData();
-  renderDashboard();
-}
 
 function getFilteredData() {
   const cat = filterCategoria.value;
@@ -91,7 +126,7 @@ function renderDashboard() {
   let entries = 0, exits = 0;
   const catTotals = {};
 
-  data.sort((a, b) => new Date(b.data) - new Date(a.data)).forEach(l => {
+  data.forEach(l => {
     if (l.tipo === 'entrada') entries += l.valor;
     else {
       exits += l.valor;
@@ -106,7 +141,7 @@ function renderDashboard() {
       <td class="${l.tipo === 'entrada' ? 'badge-entrada' : 'badge-saida'}">
         ${l.tipo === 'entrada' ? '+' : '-'} ${l.valor.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}
       </td>
-      <td><button class="btn-deletar" onclick="removerLancamento(${l.id})">Excluir</button></td>
+      <td><button class="btn-deletar" onclick="removerLancamento('${l.id}')">Excluir</button></td>
     `;
     tbody.appendChild(row);
   });
@@ -140,7 +175,6 @@ function initCharts() {
 }
 
 function updateCharts(data) {
-  // Pie Chart: Gastos por Categoria
   const exits = data.filter(l => l.tipo === 'saida');
   const catMap = {};
   exits.forEach(l => catMap[l.categoria] = (catMap[l.categoria] || 0) + l.valor);
@@ -149,7 +183,6 @@ function updateCharts(data) {
   pieChart.data.datasets[0].data = Object.values(catMap);
   pieChart.update();
 
-  // Line Chart: Evolução Temporal
   const sortedData = [...data].sort((a,b) => new Date(a.data) - new Date(b.data));
   const dates = [];
   const balances = [];
@@ -170,9 +203,9 @@ function updateCharts(data) {
 
 btnExport.onclick = () => {
   const data = getFilteredData();
-  let csv = 'Data,Descrição,Categoria,Tipo,Valor\n';
+  let csv = 'Data,Descrição,Categoria,Tipo,Valor\\n';
   data.forEach(l => {
-    csv += `${l.data},${l.descricao},${l.categoria},${l.tipo},${l.valor}\n`;
+    csv += `${l.data},${l.descricao},${l.categoria},${l.tipo},${l.valor}\\n`;
   });
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = window.URL.createObjectURL(blob);
@@ -182,11 +215,13 @@ btnExport.onclick = () => {
   a.click();
 };
 
-btnClear.onclick = () => {
-  if(confirm('Tem certeza que deseja apagar TODOS os dados?')) {
-    lancamentos = [];
-    saveData();
-    renderDashboard();
+btnClear.onclick = async () => {
+  if(confirm('Tem certeza que deseja apagar TODOS os dados da nuvem?')) {
+    const batch = db.batch();
+    lancamentos.forEach(l => {
+      batch.delete(db.collection('lancamentos').doc(l.id));
+    });
+    await batch.commit();
   }
 };
 
