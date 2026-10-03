@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle Financeiro Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1 class="main-title">Dashboard Financeiro Pro</h1>
+
+    <!-- Summary Cards -->
+    <div class="cards">
+      <div class="card entrada">
+        <h3>Entradas</h3>
+        <p id="total-entradas">R$ 0,00</p>
+      </div>
+      <div class="card saida">
+        <h3>Saídas</h3>
+        <p id="total-saidas">R$ 0,00</p>
+      </div>
+      <div class="card saldo">
+        <h3>Saldo Total</h3>
+        <p id="total-saldo">R$ 0,00</p>
+      </div>
+      <div class="card analytics">
+        <h3>Maior Gasto</h3>
+        <p id="top-category">-</p>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- Left Column: Input and Filters -->
+      <div class="col-left">
+        <div class="box">
+          <h2><span class="icon">➕</span> Novo Lançamento</h2>
+          <form id="form-lancamento">
+            <div class="form-group">
+              <label for="descricao">Descrição</label>
+              <input type="text" id="descricao" placeholder="Ex: Salário, Aluguel..." required>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="valor">Valor (R$)</label>
+                <input type="number" id="valor" step="0.01" min="0.01" placeholder="0.00" required>
+              </div>
+
+              <div class="form-group">
+                <label for="tipo">Tipo</label>
+                <select id="tipo" required>
+                  <option value="entrada">Entrada (+)</option>
+                  <option value="saida">Saída (-)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="categoria">Natureza da Operação</label>
+                <select id="categoria" required>
+                  <!-- Populated by JS based on type -->
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="data">Data</label>
+                <input type="date" id="data" required>
+              </div>
+            </div>
+
+            <button type="submit" id="btn-adicionar">Registrar Lançamento</button>
+          </form>
+        </div>
+
+        <div class="box">
+          <h2><span class="icon">🔍</span> Filtros e Relatórios</h2>
+          <div class="filter-group">
+            <div class="form-group">
+              <label>Categoria</label>
+              <select id="filter-categoria">
+                <option value="all">Todas</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Período</label>
+              <div class="date-range">
+                <input type="date" id="filter-date-start">
+                <span>até</span>
+                <input type="date" id="filter-date-end">
+              </div>
+            </div>
+          </div>
+          <div class="action-buttons">
+            <button id="btn-export" class="btn-secondary">Exportar CSV</button>
+            <button id="btn-clear" class="btn-danger">Limpar Tudo</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Charts and Table -->
+      <div class="col-right">
+        <div class="charts-container">
+          <div class="chart-box">
+            <h3>Distribuição de Gastos</h3>
+            <canvas id="chart-pie"></canvas>
+          </div>
+          <div class="chart-box">
+            <h3>Evolução do Saldo</h3>
+            <canvas id="chart-line"></canvas>
+          </div>
+        </div>
+
+        <div class="box">
+          <h2><span class="icon">📋</span> Histórico Detalhado</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th>Valor</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="tabela-lancamentos"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
