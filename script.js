@@ -1,5 +1,4 @@
 
-// Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAQjfrjAThP69iKfX3iKn-czPNR_JHl2LQ",
   authDomain: "controle-financeiro-8955a.firebaseapp.com",
@@ -9,7 +8,6 @@ const firebaseConfig = {
   appId: "1:1012107734869:web:573eb9871d4f56c08189dc"
 };
 
-// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
@@ -21,7 +19,6 @@ const NATUREZAS = {
 let lancamentos = [];
 let pieChart, lineChart;
 
-// Elements
 const formLancamento = document.querySelector('#form-lancamento');
 const tipoSelect = document.querySelector('#tipo');
 const categoriaSelect = document.querySelector('#categoria');
@@ -31,18 +28,42 @@ const filterDateEnd = document.querySelector('#filter-date-end');
 const btnExport = document.querySelector('#btn-export');
 const btnClear = document.querySelector('#btn-clear');
 
-// Init
-window.onload = () => {
+window.onload = async () => {
   updateCategorias();
   populateFilterCategories();
+  
+  // 1. MIGRAÇÃO: Move dados do localStorage para o Firebase se existirem
+  await migrateLocalDataToCloud();
+  
   initRealtimeListener();
   initCharts();
 };
 
-// --- Firebase Sync ---
+async function migrateLocalDataToCloud() {
+  const localData = localStorage.getItem('finance_data');
+  if (localData) {
+    try {
+      const parsedData = JSON.parse(localData);
+      if (Array.isArray(parsedData) && parsedData.length > 0) {
+        console.log("Migrando dados locais para a nuvem...");
+        for (const item of parsedData) {
+          // Só adiciona se não tiver ID de Firestore (para evitar duplicatas)
+          // Note: Local ID era Date.now(), Firestore ID é alfanumérico
+          if (typeof item.id === 'number') {
+            await db.collection('lancamentos').add(item);
+          }
+        }
+        // Limpa o local storage após migrar com sucesso
+        localStorage.removeItem('finance_data');
+        console.log("Migração concluída!");
+      }
+    } catch (e) {
+      console.error("Erro na migração:", e);
+    }
+  }
+}
 
 function initRealtimeListener() {
-  // Sincroniza em tempo real com o Firestore
   db.collection('lancamentos').orderBy('data', 'desc')
     .onSnapshot((snapshot) => {
       lancamentos = snapshot.docs.map(doc => ({
@@ -51,8 +72,8 @@ function initRealtimeListener() {
       }));
       renderDashboard();
     }, (error) => {
-      console.error("Erro ao carregar dados: ", error);
-      alert("Erro de permissão: Certifique-se de que as Regras do Firestore estão em 'Modo Teste'.");
+      console.error("Erro de permissão: ", error);
+      alert("Atenção: Verifique se as Regras do Firestore estão em 'Modo Teste' no Console do Firebase.");
     });
 }
 
@@ -60,8 +81,7 @@ async function adicionarAoEstado(lancamento) {
   try {
     await db.collection('lancamentos').add(lancamento);
   } catch (e) {
-    console.error("Erro ao salvar: ", e);
-    alert("Erro ao salvar no banco de dados.");
+    alert("Erro ao salvar: Verifique as Regras do Firestore.");
   }
 }
 
@@ -69,11 +89,9 @@ async function removerLancamento(id) {
   try {
     await db.collection('lancamentos').doc(id).delete();
   } catch (e) {
-    console.error("Erro ao deletar: ", e);
+    console.error(e);
   }
 }
-
-// --- Logic ---
 
 function updateCategorias() {
   const tipo = tipoSelect.value;
@@ -99,7 +117,6 @@ formLancamento.addEventListener('submit', async (e) => {
     categoria: categoriaSelect.value,
     data: document.querySelector('#data').value
   };
-  
   await adicionarAoEstado(novo);
   formLancamento.reset();
   updateCategorias();
@@ -156,8 +173,6 @@ function renderDashboard() {
   updateCharts(data);
 }
 
-// --- Charts ---
-
 function initCharts() {
   const pieCtx = document.getElementById('chart-pie').getContext('2d');
   pieChart = new Chart(pieCtx, {
@@ -198,8 +213,6 @@ function updateCharts(data) {
   lineChart.data.datasets[0].data = balances;
   lineChart.update();
 }
-
-// --- Extras ---
 
 btnExport.onclick = () => {
   const data = getFilteredData();
