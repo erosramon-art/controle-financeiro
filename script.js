@@ -105,8 +105,8 @@ function initRealtimeListener() {
       log(`Conectado! ${snapshot.size} itens carregados da nuvem.`);
       
       lancamentos = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        id: doc.id
       }));
       renderDashboard();
     }, (error) => {
