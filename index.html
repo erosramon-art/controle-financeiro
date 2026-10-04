@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Controle Financeiro Pro - Sincronizado</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -24,9 +24,10 @@
         </div>
     </div>
 
-    <!-- DEBUG CONSOLE (Visible for troubleshooting) -->
-    <div id="debug-console" style="background: #1e293b; color: #38bdf8; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.75rem; margin-bottom: 20px; max-height: 150px; overflow-y: auto; border: 2px solid #3b82f6;">
-        <div>[SISTEMA] Iniciando diagnósticos...</div>
+    <!-- DEBUG CONSOLE - NOW MORE VISIBLE -->
+    <div id="debug-console" style="background: #0f172a; color: #38bdf8; padding: 15px; border-radius: 12px; font-family: monospace; font-size: 0.8rem; margin-bottom: 20px; border: 2px solid #3b82f6; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+        <div style="color: #94a3b8; margin-bottom: 5px; font-weight: bold;">LOG DE SINCRONIZAÇÃO:</div>
+        <div id="log-content"></div>
     </div>
 
     <div class="cards">
@@ -112,7 +113,7 @@
             <button id="btn-export" class="btn-secondary">Exportar CSV</button>
             <button id="btn-clear" class="btn-danger">Limpar Tudo</button>
           </div>
-          <button id="btn-force-sync" style="background: #3b82f6; margin-top: 15px; font-size: 0.8rem;">Sincronizar Dados Antigos Agora</button>
+          <button id="btn-force-sync" style="background: #3b82f6; margin-top: 15px; font-size: 0.8rem; font-weight: bold;">Sincronizar Dados Antigos Agora</button>
         </div>
       </div>
 
@@ -149,7 +150,6 @@
     </div>
   </div>
 
-  <!-- Added cache-buster to script URL -->
-  <script src="script.js?v=1.1"></script>
+  <script src="script.js?v=20241004_Sincro"></script>
 </body>
 </html>

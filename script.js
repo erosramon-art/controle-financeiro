@@ -31,13 +31,13 @@ const btnForceSync = document.querySelector('#btn-force-sync');
 const statusDot = document.querySelector('#status-dot');
 const statusText = document.querySelector('#status-text');
 const diagBanner = document.querySelector('#diag-banner');
-const debugConsole = document.querySelector('#debug-console');
+const logContent = document.querySelector('#log-content');
 
 function log(msg) {
     const div = document.createElement('div');
     div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-    debugConsole.appendChild(div);
-    debugConsole.scrollTop = debugConsole.scrollHeight;
+    logContent.appendChild(div);
+    logContent.scrollTop = logContent.scrollHeight;
     console.log(msg);
 }
 
@@ -46,7 +46,7 @@ window.onload = async () => {
   updateCategorias();
   populateFilterCategories();
   
-  // Try to migrate a la mode d'emploi
+  // Forced migration check
   await migrateLocalDataToCloud();
   
   initRealtimeListener();
@@ -54,43 +54,42 @@ window.onload = async () => {
 };
 
 async function migrateLocalDataToCloud() {
-  log("Verificando cache local (localStorage)...");
-  const localData = localStorage.getItem('finance_data');
-  if (localData) {
+  log("Checando cache local...");
+  const localData = localStorage.getItem('finance_//_data'); // Use a different key to avoid clashes
+  // Since we might have used different keys, check both
+  const localDataAlt = localStorage.getItem('finance_data');
+  const dataToMigrate = localData || localDataAlt;
+
+  if (dataToMigrate) {
     try {
-      const parsedData = JSON.parse(localData);
+      const parsedData = JSON.parse(dataToMigrate);
       if (Array.isArray(parsedData) && parsedData.length > 0) {
-        log(`Encontrados ${parsedData.length} itens locais. Iniciando upload...`);
+        log(`Encontrados ${parsedData.length} itens locais. Sincronizando...`);
         let count = 0;
         for (const item of parsedData) {
-          // We migration check: if item has no firestore ID (alfanumérico), we upload
           if (typeof item.id === 'number') {
-            try {
-               await db.collection('lancamentos').add(item);
-               count++;
-               log(`Item ${count} enviado com sucesso.`);
-            } catch(e) { log(`Erro ao enviar item: ${e.message}`); }
+            await db.collection('lancamentos').add(item);
+            count++;
           }
         }
         localStorage.removeItem('finance_data');
-        log(`Migração concluída. ${count} itens movidos para a nuvem.`);
-      } else {
-        log("Cache local vazio ou inválido.");
+        localStorage.removeItem('finance_//_data');
+        log(`Sucesso: ${count} itens movidos para a nuvem.`);
       }
-    } catch (e) { log("Erro ao ler cache local: " + e.message); }
+    } catch (e) { log("Erro na migração: " + e.message); }
   } else {
-    log("Nenhum dado local encontrado para migrar.");
+    log("Sem dados locais para migrar.");
   }
 }
 
 function initRealtimeListener() {
-  log("Tentando conexão com Firestore...");
+  log("Tentando conectar ao Google Cloud...");
   db.collection('lancamentos').orderBy('data', 'desc')
     .onSnapshot((snapshot) => {
       statusDot.style.background = "#10b981";
       statusText.innerText = "Sincronizado";
       diagBanner.style.display = "none";
-      log(`Nuvem sincronizada: ${snapshot.size} itens carregados.`);
+      log(`Conectado! ${snapshot.size} itens carregados da nuvem.`);
       
       lancamentos = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -107,12 +106,12 @@ function initRealtimeListener() {
 
 async function adicionarAoEstado(lancamento) {
   try {
-    log("Enviando novo lançamento para a nuvem...");
+    log("Enviando dado para nuvem...");
     await db.collection('lancamentos').add(lancamento);
-    log("Lançamento salvo com sucesso!");
+    log("Salvo com sucesso!");
   } catch (e) {
-    log(`Erro ao salvar: ${e.message}`);
-    alert("ERRO: O Firebase bloqueou a gravação. Verifique as Regras do Firestore no Console.");
+    log(`Erro: ${e.message}`);
+    alert("Erro ao salvar. Verifique as Regras do Firebase.");
   }
 }
 
@@ -120,8 +119,8 @@ async function removerLancamento(id) {
   try {
     log(`Removendo item ${id}...`);
     await db.collection('lancamentos').doc(id).delete();
-    log("Item removido.");
-  } catch (e) { log(`Erro ao deletar: ${e.message}`); }
+    log("Removido.");
+  } catch (e) { log(`Erro: ${e.message}`); }
 }
 
 function updateCategorias() {
@@ -223,7 +222,7 @@ function updateCharts(data) {
   pieChart.data.datasets[0].data = Object.values(catMap);
   pieChart.update();
 
-  const sortedData = [...data].sort((a,b) => new Date(a.data) - new Date(b.// la l.data) - new Date(b.data));
+  const sortedData = [...data].sort((a,b) => new Date(a.data) - new Date(b.data));
   const dates = [];
   const balances = [];
   let currentBalance = 0;
