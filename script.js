@@ -27,17 +27,18 @@ const filterDateStart = document.querySelector('#filter-date-start');
 const filterDateEnd = document.querySelector('#filter-date-end');
 const btnExport = document.querySelector('#btn-export');
 const btnClear = document.querySelector('#btn-clear');
+const btnForceSync = document.querySelector('#btn-force-sync');
 const statusDot = document.querySelector('#status-dot');
 const statusText = document.querySelector('#status-text');
+const diagBanner = document.querySelector('#diag-banner');
 
 window.onload = async () => {
   updateCategorias();
   populateFilterCategories();
   
-  // 1. Migrate data first
+  // First try automatic migration
   await migrateLocalDataToCloud();
   
-  // 2. Start listening to cloud
   initRealtimeListener();
   initCharts();
 };
@@ -48,15 +49,16 @@ async function migrateLocalDataToCloud() {
     try {
       const parsedData = JSON.parse(localData);
       if (Array.isArray(parsedData) && parsedData.length > 0) {
-        console.log("Migrando dados locais...");
+        console.log("Tentando migrar dados locais...");
+        let count = 0;
         for (const item of parsedData) {
-          // Use a consistent ID check to prevent duplicates
           if (typeof item.id === 'number') {
             await db.collection('lancamentos').add(item);
+            count++;
           }
         }
         localStorage.removeItem('finance_data');
-        console.log("Migração completa.");
+        console.log(`Migração concluída. ${count} itens enviados.`);
       }
     } catch (e) { console.error("Erro na migração:", e); }
   }
@@ -65,9 +67,9 @@ async function migrateLocalDataToCloud() {
 function initRealtimeListener() {
   db.collection('lancamentos').orderBy('data', 'desc')
     .onSnapshot((snapshot) => {
-      // Update status to Connected
       statusDot.style.background = "#10b981";
       statusText.innerText = "Sincronizado";
+      diagBanner.style.display = "none";
       
       lancamentos = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -77,8 +79,8 @@ function initRealtimeListener() {
     }, (error) => {
       statusDot.style.background = "#ef4444";
       statusText.innerText = "Erro de Conexão";
+      diagBanner.style.display = "block";
       console.error("Erro Firestore: ", error);
-      alert("Erro de permissão no Firebase. Verifique se as Regras estão em 'Modo Teste'.");
     });
 }
 
@@ -86,7 +88,7 @@ async function adicionarAoEstado(lancamento) {
   try {
     await db.collection('lancamentos').add(lancamento);
   } catch (e) {
-    alert("Erro ao salvar. Verifique a conexão e as Regras do Firebase.");
+    alert("ERRO: O Firebase bloqueou a gravação. Verifique as Regras do Firestore no Console (coloque allow read, write: if true;)");
   }
 }
 
@@ -231,6 +233,12 @@ btnClear.onclick = async () => {
     });
     await batch.commit();
   }
+};
+
+btnForceSync.onclick = async () => {
+    alert("Iniciando tentativa de sincronização forçada...");
+    await migrateLocalDataToCloud();
+    alert("Processo de migração concluído. Verifique se os dados apareceram.");
 };
 
 [filterCategoria, filterDateStart, filterDateEnd].forEach(el => el.addEventListener('change', renderDashboard));
