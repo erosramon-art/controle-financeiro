@@ -55,10 +55,23 @@ window.onload = async () => {
 
 async function migrateLocalDataToCloud() {
   log("Checando cache local...");
-  const localData = localStorage.getItem('finance_//_data'); // Use a different key to avoid clashes
-  // Since we might have used different keys, check both
+  
+  // SCANNER: List all keys to find the hidden data
+  const allKeys = Object.keys(localStorage);
+  log(`Chaves encontradas no cache: ${allKeys.length > 0 ? allKeys.join(', ') : 'Nenhuma'}`);
+
+  const localData = localStorage.getItem('finance_//_data');
   const localDataAlt = localStorage.getItem('finance_data');
-  const dataToMigrate = localData || localDataAlt;
+  
+  // Try to find any key that contains 'finance' or 'data' if the main ones fail
+  let dataToMigrate = localData || localDataAlt;
+  if (!dataToMigrate) {
+    const fallbackKey = allKeys.find(k => k.toLowerCase().includes('finance') || k.toLowerCase().includes('lancamentos'));
+    if (fallbackKey) {
+      log(`Tentando chave alternativa encontrada: ${fallbackKey}`);
+      dataToMigrate = localStorage.getItem(fallbackKey);
+    }
+  }
 
   if (dataToMigrate) {
     try {
