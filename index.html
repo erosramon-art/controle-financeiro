@@ -7,12 +7,10 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <!-- Diagnostic Banner -->
   <div id="diag-banner" style="background: #ef4444; color: white; text-align: center; padding: 10px; font-weight: bold; font-size: 0.9rem; display: none;">
     ⚠️ ERRO DE CONEXÃO: Verifique as Regras do Firebase (Modo Teste)
   </div>
@@ -24,6 +22,11 @@
             <span id="status-dot" style="width: 10px; height: 10px; background: gray; border-radius: 50%;"></span>
             <span id="status-text">Conectando...</span>
         </div>
+    </div>
+
+    <!-- DEBUG CONSOLE (Visible for troubleshooting) -->
+    <div id="debug-console" style="background: #1e293b; color: #38bdf8; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.75rem; margin-bottom: 20px; max-height: 150px; overflow-y: auto; border: 2px solid #3b82f6;">
+        <div>[SISTEMA] Iniciando diagnósticos...</div>
     </div>
 
     <div class="cards">
@@ -146,6 +149,7 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <!-- Added cache-buster to script URL -->
+  <script src="script.js?v=1.1"></script>
 </body>
 </html>

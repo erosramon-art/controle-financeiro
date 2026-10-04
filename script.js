@@ -31,12 +31,22 @@ const btnForceSync = document.querySelector('#btn-force-sync');
 const statusDot = document.querySelector('#status-dot');
 const statusText = document.querySelector('#status-text');
 const diagBanner = document.querySelector('#diag-banner');
+const debugConsole = document.querySelector('#debug-console');
+
+function log(msg) {
+    const div = document.createElement('div');
+    div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    debugConsole.appendChild(div);
+    debugConsole.scrollTop = debugConsole.scrollHeight;
+    console.log(msg);
+}
 
 window.onload = async () => {
+  log("Iniciando App...");
   updateCategorias();
   populateFilterCategories();
   
-  // First try automatic migration
+  // Try to migrate a la mode d'emploi
   await migrateLocalDataToCloud();
   
   initRealtimeListener();
@@ -44,32 +54,43 @@ window.onload = async () => {
 };
 
 async function migrateLocalDataToCloud() {
+  log("Verificando cache local (localStorage)...");
   const localData = localStorage.getItem('finance_data');
   if (localData) {
     try {
       const parsedData = JSON.parse(localData);
       if (Array.isArray(parsedData) && parsedData.length > 0) {
-        console.log("Tentando migrar dados locais...");
+        log(`Encontrados ${parsedData.length} itens locais. Iniciando upload...`);
         let count = 0;
         for (const item of parsedData) {
+          // We migration check: if item has no firestore ID (alfanumérico), we upload
           if (typeof item.id === 'number') {
-            await db.collection('lancamentos').add(item);
-            count++;
+            try {
+               await db.collection('lancamentos').add(item);
+               count++;
+               log(`Item ${count} enviado com sucesso.`);
+            } catch(e) { log(`Erro ao enviar item: ${e.message}`); }
           }
         }
         localStorage.removeItem('finance_data');
-        console.log(`Migração concluída. ${count} itens enviados.`);
+        log(`Migração concluída. ${count} itens movidos para a nuvem.`);
+      } else {
+        log("Cache local vazio ou inválido.");
       }
-    } catch (e) { console.error("Erro na migração:", e); }
+    } catch (e) { log("Erro ao ler cache local: " + e.message); }
+  } else {
+    log("Nenhum dado local encontrado para migrar.");
   }
 }
 
 function initRealtimeListener() {
+  log("Tentando conexão com Firestore...");
   db.collection('lancamentos').orderBy('data', 'desc')
     .onSnapshot((snapshot) => {
       statusDot.style.background = "#10b981";
       statusText.innerText = "Sincronizado";
       diagBanner.style.display = "none";
+      log(`Nuvem sincronizada: ${snapshot.size} itens carregados.`);
       
       lancamentos = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -80,22 +101,27 @@ function initRealtimeListener() {
       statusDot.style.background = "#ef4444";
       statusText.innerText = "Erro de Conexão";
       diagBanner.style.display = "block";
-      console.error("Erro Firestore: ", error);
+      log(`ERRO CRÍTICO: ${error.message}`);
     });
 }
 
 async function adicionarAoEstado(lancamento) {
   try {
+    log("Enviando novo lançamento para a nuvem...");
     await db.collection('lancamentos').add(lancamento);
+    log("Lançamento salvo com sucesso!");
   } catch (e) {
-    alert("ERRO: O Firebase bloqueou a gravação. Verifique as Regras do Firestore no Console (coloque allow read, write: if true;)");
+    log(`Erro ao salvar: ${e.message}`);
+    alert("ERRO: O Firebase bloqueou a gravação. Verifique as Regras do Firestore no Console.");
   }
 }
 
 async function removerLancamento(id) {
   try {
+    log(`Removendo item ${id}...`);
     await db.collection('lancamentos').doc(id).delete();
-  } catch (e) { console.error(e); }
+    log("Item removido.");
+  } catch (e) { log(`Erro ao deletar: ${e.message}`); }
 }
 
 function updateCategorias() {
@@ -197,7 +223,7 @@ function updateCharts(data) {
   pieChart.data.datasets[0].data = Object.values(catMap);
   pieChart.update();
 
-  const sortedData = [...data].sort((a,b) => new Date(a.data) - new Date(b.data));
+  const sortedData = [...data].sort((a,b) => new Date(a.data) - new Date(b.// la l.data) - new Date(b.data));
   const dates = [];
   const balances = [];
   let currentBalance = 0;
@@ -236,9 +262,9 @@ btnClear.onclick = async () => {
 };
 
 btnForceSync.onclick = async () => {
-    alert("Iniciando tentativa de sincronização forçada...");
+    log("Sincronização forçada iniciada...");
     await migrateLocalDataToCloud();
-    alert("Processo de migração concluído. Verifique se os dados apareceram.");
+    log("Processo finalizado.");
 };
 
 [filterCategoria, filterDateStart, filterDateEnd].forEach(el => el.addEventListener('change', renderDashboard));
