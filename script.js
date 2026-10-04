@@ -27,14 +27,17 @@ const filterDateStart = document.querySelector('#filter-date-start');
 const filterDateEnd = document.querySelector('#filter-date-end');
 const btnExport = document.querySelector('#btn-export');
 const btnClear = document.querySelector('#btn-clear');
+const statusDot = document.querySelector('#status-dot');
+const statusText = document.querySelector('#status-text');
 
 window.onload = async () => {
   updateCategorias();
   populateFilterCategories();
   
-  // 1. MIGRAÇÃO: Move dados do localStorage para o Firebase se existirem
+  // 1. Migrate data first
   await migrateLocalDataToCloud();
   
+  // 2. Start listening to cloud
   initRealtimeListener();
   initCharts();
 };
@@ -45,35 +48,37 @@ async function migrateLocalDataToCloud() {
     try {
       const parsedData = JSON.parse(localData);
       if (Array.isArray(parsedData) && parsedData.length > 0) {
-        console.log("Migrando dados locais para a nuvem...");
+        console.log("Migrando dados locais...");
         for (const item of parsedData) {
-          // Só adiciona se não tiver ID de Firestore (para evitar duplicatas)
-          // Note: Local ID era Date.now(), Firestore ID é alfanumérico
+          // Use a consistent ID check to prevent duplicates
           if (typeof item.id === 'number') {
             await db.collection('lancamentos').add(item);
           }
         }
-        // Limpa o local storage após migrar com sucesso
         localStorage.removeItem('finance_data');
-        console.log("Migração concluída!");
+        console.log("Migração completa.");
       }
-    } catch (e) {
-      console.error("Erro na migração:", e);
-    }
+    } catch (e) { console.error("Erro na migração:", e); }
   }
 }
 
 function initRealtimeListener() {
   db.collection('lancamentos').orderBy('data', 'desc')
     .onSnapshot((snapshot) => {
+      // Update status to Connected
+      statusDot.style.background = "#10b981";
+      statusText.innerText = "Sincronizado";
+      
       lancamentos = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
       renderDashboard();
     }, (error) => {
-      console.error("Erro de permissão: ", error);
-      alert("Atenção: Verifique se as Regras do Firestore estão em 'Modo Teste' no Console do Firebase.");
+      statusDot.style.background = "#ef4444";
+      statusText.innerText = "Erro de Conexão";
+      console.error("Erro Firestore: ", error);
+      alert("Erro de permissão no Firebase. Verifique se as Regras estão em 'Modo Teste'.");
     });
 }
 
@@ -81,16 +86,14 @@ async function adicionarAoEstado(lancamento) {
   try {
     await db.collection('lancamentos').add(lancamento);
   } catch (e) {
-    alert("Erro ao salvar: Verifique as Regras do Firestore.");
+    alert("Erro ao salvar. Verifique a conexão e as Regras do Firebase.");
   }
 }
 
 async function removerLancamento(id) {
   try {
     await db.collection('lancamentos').doc(id).delete();
-  } catch (e) {
-    console.error(e);
-  }
+  } catch (e) { console.error(e); }
 }
 
 function updateCategorias() {
@@ -126,7 +129,6 @@ function getFilteredData() {
   const cat = filterCategoria.value;
   const start = filterDateStart.value;
   const end = filterDateEnd.value;
-
   return lancamentos.filter(l => {
     const matchCat = cat === 'all' || l.categoria === cat;
     const matchStart = !start || l.data >= start;
@@ -139,7 +141,6 @@ function renderDashboard() {
   const data = getFilteredData();
   const tbody = document.querySelector('#tabela-lancamentos');
   tbody.innerHTML = '';
-
   let entries = 0, exits = 0;
   const catTotals = {};
 
@@ -149,7 +150,6 @@ function renderDashboard() {
       exits += l.valor;
       catTotals[l.categoria] = (catTotals[l.categoria] || 0) + l.valor;
     }
-
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${l.data.split('-').reverse().join('/')}</td>
@@ -169,7 +169,6 @@ function renderDashboard() {
 
   const topCat = Object.entries(catTotals).sort((a,b) => b[1]-a[1])[0];
   document.querySelector('#top-category').innerText = topCat ? topCat[0] : '-';
-
   updateCharts(data);
 }
 
@@ -180,7 +179,6 @@ function initCharts() {
     data: { labels: [], datasets: [{ data: [], backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#64748b'] }] },
     options: { plugins: { legend: { position: 'bottom' } } }
   });
-
   const lineCtx = document.getElementById('chart-line').getContext('2d');
   lineChart = new Chart(lineCtx, {
     type: 'line',
@@ -193,7 +191,6 @@ function updateCharts(data) {
   const exits = data.filter(l => l.tipo === 'saida');
   const catMap = {};
   exits.forEach(l => catMap[l.categoria] = (catMap[l.categoria] || 0) + l.valor);
-  
   pieChart.data.labels = Object.keys(catMap);
   pieChart.data.datasets[0].data = Object.values(catMap);
   pieChart.update();
@@ -202,13 +199,11 @@ function updateCharts(data) {
   const dates = [];
   const balances = [];
   let currentBalance = 0;
-
   sortedData.forEach(l => {
     dates.push(l.data);
     currentBalance += (l.tipo === 'entrada' ? l.valor : -l.valor);
     balances.push(currentBalance);
   });
-
   lineChart.data.labels = dates;
   lineChart.data.datasets[0].data = balances;
   lineChart.update();
@@ -239,5 +234,4 @@ btnClear.onclick = async () => {
 };
 
 [filterCategoria, filterDateStart, filterDateEnd].forEach(el => el.addEventListener('change', renderDashboard));
-
 window.removerLancamento = removerLancamento;
