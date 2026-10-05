@@ -42,6 +42,10 @@ const agendaTipoSelect = document.querySelector('#agenda-tipo');
 const agendaCategoriaSelect = document.querySelector('#agenda-categoria');
 const tabelaAgenda = document.querySelector('#tabela-agenda');
 
+// DOM - Dashboard Summaries
+const summaryLastLaunches = document.querySelector('#summary-last-launches');
+const summaryNextAccounts = document.querySelector('#summary-next-accounts');
+
 function log(msg) {
     const div = document.createElement('div');
     div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
@@ -53,15 +57,12 @@ function log(msg) {
 window.onload = async () => {
   log("Iniciando App...");
   
-  // Setup Categorias
   updateCategorias(tipoSelect, categoriaSelect);
   updateCategorias(agendaTipoSelect, agendaCategoriaSelect);
   populateFilterCategories();
   
-  // Migration
   await migrateLocalDataToCloud();
   
-  // Listeners
   initRealtimeListener();
   initAgendaListener();
   initCharts();
@@ -123,6 +124,7 @@ function initAgendaListener() {
       log(`Agenda atualizada: ${snapshot.size} contas.`);
       agenda = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
       renderAgenda();
+      renderDashboardSummaries();
     });
 }
 
@@ -157,11 +159,9 @@ function populateFilterCategories() {
     allCats.map(cat => `<option value=\"${cat}\">${cat}</option>`).join('');
 }
 
-// Listeners de Mudança de Tipo
 tipoSelect.addEventListener('change', () => updateCategorias(tipoSelect, categoriaSelect));
 agendaTipoSelect.addEventListener('change', () => updateCategorias(agendaTipoSelect, agendaCategoriaSelect));
 
-// FORMULÁRIO DE LANÇAMENTOS
 formLancamento.addEventListener('submit', async (e) => {
   e.preventDefault();
   const novo = {
@@ -176,7 +176,6 @@ formLancamento.addEventListener('submit', async (e) => {
   updateCategorias(tipoSelect, categoriaSelect);
 });
 
-// FORMULÁRIO DE AGENDA
 formAgenda.addEventListener('submit', async (e) => {
   e.preventDefault();
   const conta = {
@@ -205,16 +204,14 @@ async function baixaAgenda(id) {
     if (!doc.exists) return;
     
     const dados = doc.data();
-    // Move para lançamentos
     await db.collection('lancamentos').add({
       descricao: `[BAIXA] ${dados.descricao}`,
       valor: dados.valor,
       tipo: dados.tipo,
       categoria: dados.categoria,
-      data: new Date().toISOString().split('T')[0] // Data de hoje
+      data: new Date().toISOString().split('T')[0]
     });
     
-    // Remove da agenda
     await db.collection('agenda').doc(id).delete();
     log("Conta liquidada e movida para lançamentos!");
   } catch (e) { log(`Erro na baixa: ${e.message}`); }
@@ -254,6 +251,7 @@ function renderDashboard() {
   const topCat = Object.entries(catTotals).sort((a,b) => b[1]-a[1])[0];
   document.querySelector('#top-category').innerText = topCat ? topCat[0] : '-';
   updateCharts(data);
+  renderDashboardSummaries();
 }
 
 function renderAgenda() {
@@ -283,6 +281,36 @@ function renderAgenda() {
       </td>
     `;
     tbody.appendChild(row);
+  });
+}
+
+function renderDashboardSummaries() {
+  if(!summaryLastLaunches || !summaryNextAccounts) return;
+
+  // Últimos 5 Lançamentos
+  summaryLastLaunches.innerHTML = '';
+  const lastLaunches = [...lancamentos].sort((a,b) => new Date(b.data) - new Date(a.data)).slice(0, 5);
+  lastLaunches.forEach(l => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${l.data.split('-').reverse().join('/')}</td>
+      <td>${l.descricao}</td>
+      <td class=\"${l.tipo === 'entrada' ? 'badge-entrada' : 'badge-saida'}\">${l.valor.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</td>
+    `;
+    summaryLastLaunches.appendChild(row);
+  });
+
+  // Próximos 5 Vencimentos
+  summaryNextAccounts.innerHTML = '';
+  const nextAccounts = [...agenda].sort((a,b) => new Date(a.data) - new Date(b.data)).slice(0, 5);
+  nextAccounts.forEach(a => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${a.data.split('-').reverse().join('/')}</td>
+      <td>${a.descricao}</td>
+      <td class=\"${a.tipo === 'entrada' ? 'badge-entrada' : 'badge-saida'}\">${a.valor.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</td>
+    `;
+    summaryNextAccounts.appendChild(row);
   });
 }
 
