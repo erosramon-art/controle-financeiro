@@ -1,130 +1,131 @@
 <!DOCTYPE html>
-<html lang=\"pt-BR\">
+<html lang="pt-BR">
 <head>
-    <meta charset=\"UTF-8\">
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle Financeiro Pro - Sincronizado</title>
-    <link rel=\"stylesheet\" href=\"style.css?v=3\">
-    <script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>
-    <script src=\"https://cdn.tailwindcss.com\"></script>
-    <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css\">\n    <script src=\"https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js\"></script>
-    <script src=\"https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js\"></script>
+    <link rel="stylesheet" href="style.css?v=4">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-    <div id=\"diag-banner\" style=\"background: #ef4444; color: white; text-align: center; padding: 10px; font-weight: bold; font-size: 0.9rem; display: none;\">
+    <div id="diag-banner" style="background: #ef4444; color: white; text-align: center; padding: 10px; font-weight: bold; font-size: 0.9rem; display: none;">
         ⚠️ ERRO DE CONEXÃO: Verifique as Regras do Firebase (Modo Teste)
     </div>
 
-    <div class=\"app-layout\">
+    <div class="app-layout">
         <!-- Sidebar -->
-        <aside class=\"sidebar\">
-            <div class=\"sidebar-header\">
-                <div class=\"logo-area\">
-                    <i class=\"fa-solid fa-wallet\"></i>
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-area">
+                    <i class="fa-solid fa-wallet"></i>
                     <span>Finanças Pro</span>
                 </div>
             </div>
 
-            <nav class=\"sidebar-nav\">
-                <a href=\"#\" class=\"nav-item active\" onclick=\"showView('view-dashboard')\">
-                    <i class=\"fa-solid fa-chart-pie\"></i> <span>Dashboard</span>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" onclick="showView('view-dashboard')">
+                    <i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span>
                 </a>
-                <a href=\"#\" class=\"nav-item\" onclick=\"showView('view-launching')\">
-                    <i class=\"fa-solid fa-plus-circle\"></i> <span>Lançamentos</span>
+                <a href="#" class="nav-item" onclick="showView('view-launching')">
+                    <i class="fa-solid fa-plus-circle"></i> <span>Lançamentos</span>
                 </a>
-                <a href=\"#\" class=\"nav-item\" onclick=\"showView('view-accounts')\">
-                    <i class=\"fa-solid fa-calendar-days\"></i> <span>Contas a Vencer</span>
+                <a href="#" class="nav-item" onclick="showView('view-accounts')">
+                    <i class="fa-solid fa-calendar-days"></i> <span>Contas a Vencer</span>
                 </a>
-                <a href=\"#\" class=\"nav-item\" onclick=\"showView('view-reports')\">
-                    <i class=\"fa-solid fa-list-check\"></i> <span>Relatórios</span>
+                <a href="#" class="nav-item" onclick="showView('view-reports')">
+                    <i class="fa-solid fa-list-check"></i> <span>Relatórios</span>
                 </a>
             </nav>
 
-            <div class=\"sidebar-footer\">
-                <div id=\"sync-status\" class=\"sync-status\">
-                    <span id=\"status-dot\"></span>
-                    <span id=\"status-text\">Conectando...</span>
+            <div class="sidebar-footer">
+                <div id="sync-status" class="sync-status">
+                    <span id="status-dot"></span>
+                    <span id="status-text">Conectando...</span>
                 </div>
             </div>
         </aside>
 
         <!-- Main Content -->
-        <main class=\"main-content\">
-            <header class=\"main-header\">
-                <h1 id=\"page-title\" class=\"main-title\">Dashboard</h1>
-                <div id=\"debug-console\" class=\"debug-console\">
-                    <div class=\"debug-header\">LOG DE SINCRONIZAÇÃO:</div>
-                    <div id=\"log-content\"></div>
+        <main class="main-content">
+            <header class="main-header">
+                <h1 id="page-title" class="main-title">Dashboard</h1>
+                <div id="debug-console" class="debug-console">
+                    <div class="debug-header">LOG DE SINCRONIZAÇÃO:</div>
+                    <div id="log-content"></div>
                 </div>
             </header>
 
-            <div class=\"content-area\">
+            <div class="content-area">
                 <!-- VIEW: DASHBOARD -->
-                <section id=\"view-dashboard\" class=\"view active\">
-                    <div class=\"cards\">
-                        <div class=\"card saldo highlight-card\">
+                <section id="view-dashboard" class="view active">
+                    <div class="cards">
+                        <div class="card saldo highlight-card">
                             <h3>Saldo Total Atual</h3>
-                            <p id=\"total-saldo\">R$ 0,00</p>
-                            <div class=\"card-subtitle\">Saldo consolidado em nuvem</div>
+                            <p id="total-saldo">R$ 0,00</p>
+                            <div class="card-subtitle">Saldo consolidado em nuvem</div>
                         </div>
-                        <div class=\"card entrada\">
+                        <div class="card entrada">
                             <h3>Entradas</h3>
-                            <p id=\"total-entradas\">R$ 0,00</p>
+                            <p id="total-entradas">R$ 0,00</p>
                         </div>
-                        <div class=\"card saida\">
+                        <div class="card saida">
                             <h3>Saídas</h3>
-                            <p id=\"total-saidas\">R$ 0,00</p>
+                            <p id="total-saidas">R$ 0,00</p>
                         </div>
-                        <div class=\"card analytics\">
+                        <div class="card analytics">
                             <h3>Maior Gasto</h3>
-                            <p id=\"top-category\">-</p>
+                            <p id="top-category">-</p>
                         </div>
                     </div>
-                    <div class=\"charts-container\">
-                        <div class=\"chart-box\">
+                    <div class="charts-container">
+                        <div class="chart-box">
                             <h3>Distribuição de Gastos</h3>
-                            <canvas id=\"chart-pie\"></canvas>
+                            <canvas id="chart-pie"></canvas>
                         </div>
-                        <div class=\"chart-box\">
+                        <div class="chart-box">
                             <h3>Evolução do Saldo</h3>
-                            <canvas id=\"chart-line\"></canvas>
+                            <canvas id="chart-line"></canvas>
                         </div>
                     </div>
                 </section>
 
                 <!-- VIEW: LAUNCHING -->
-                <section id=\"view-launching\" class=\"view\">
-                    <div class=\"box\">
-                        <h2><span class=\"icon\">➕</span> Novo Lançamento</h2>
-                        <form id=\"form-lancamento\">
-                            <div class=\"form-group\">
-                                <label for=\"descricao\">Descrição</label>
-                                <input type=\"text\" id=\"descricao\" placeholder=\"Ex: Salário, Aluguel...\" required>
+                <section id="view-launching" class="view">
+                    <div class="box">
+                        <h2><span class="icon">➕</span> Novo Lançamento</h2>
+                        <form id="form-lancamento">
+                            <div class="form-group">
+                                <label for="descricao">Descrição</label>
+                                <input type="text" id="descricao" placeholder="Ex: Salário, Aluguel..." required>
                             </div>
-                            <div class=\"form-row\">
-                                <div class=\"form-group\">
-                                    <label for=\"valor\">Valor (R$)</label>
-                                    <input type=\"number\" id=\"valor\" step=\"0.01\" min=\"0.01\" placeholder=\"0.00\" required>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="valor">Valor (R$)</label>
+                                    <input type="number" id="valor" step="0.01" min="0.01" placeholder="0.00" required>
                                 </div>
-                                <div class=\"form-group\">
-                                    <label for=\"tipo\">Tipo</label>
-                                    <select id=\"tipo\" required>
-                                        <option value=\"entrada\">Entrada (+)</option>
-                                        <option value=\"saida\">Saída (-)</option>
+                                <div class="form-group">
+                                    <label for="tipo">Tipo</label>
+                                    <select id="tipo" required>
+                                        <option value="entrada">Entrada (+)</option>
+                                        <option value="saida">Saída (-)</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class=\"form-row\">
-                                <div class=\"form-group\">
-                                    <label for=\"categoria\">Natureza da Operação</label>
-                                    <select id=\"categoria\" required></select>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="categoria">Natureza da Operação</label>
+                                    <select id="categoria" required></select>
                                 </div>
-                                <div class=\"form-group\">
-                                    <label for=\"data\">Data</label>
-                                    <input type=\"date\" id=\"data\" required>
+                                <div class="form-group">
+                                    <label for="data">Data</label>
+                                    <input type="date" id="data" required>
                                 </div>
                             </div>
-                            <button type=\"submit\" id=\"btn-adicionar\">Registrar Lançamento</button>
+                            <button type="submit" id="btn-adicionar">Registrar Lançamento</button>
                         </form>
                     </div>
                 </section>
@@ -185,41 +186,61 @@
                 </section>
 
                 <!-- VIEW: REPORTS -->
-                <section id=\"view-reports\" class=\"view\">
-                    <div class=\"box\">
-                        <h2><span class=\"icon\">🔍</span> Filtros e Relatórios</h2>
-                        <div class=\"filter-group\">
-                            <div class=\"form-group\">
+                <section id="view-reports" class="view">
+                    <div class="box">
+                        <h2><span class="icon">🔍</span> Filtros e Relatórios</h2>
+                        <div class="filter-group">
+                            <div class="form-group">
                                 <label>Categoria</label>
-                                <select id=\"filter-categoria\">\n                                    <option value=\"all\">Todas</option>\n                                </select>
+                                <select id="filter-categoria">
+                                    <option value="all">Todas</option>
+                                </select>
                             </div>
-                            <div class=\"form-group\">
+                            <div class="form-group">
                                 <label>Período</label>
-                                <div class=\"date-range\">\n                                    <input type=\"date\" id=\"filter-date-start\">\n                                    <span>até</span>\n                                    <input type=\"date\" id=\"filter-date-end\">\n                                </div>
+                                <div class="date-range">
+                                    <input type="date" id="filter-date-start">
+                                    <span>até</span>
+                                    <input type="date" id="filter-date-end">
+                                </div>
                             </div>
                         </div>
-                        <div class=\"action-buttons\">
-                            <button id=\"btn-export\" class=\"btn-secondary\">Exportar CSV</button>
-                            <button id=\"btn-clear\" class=\"btn-danger\">Limpar Tudo</button>
+                        <div class="action-buttons">
+                            <button id="btn-export" class="btn-secondary">Exportar CSV</button>
+                            <button id="btn-clear" class="btn-danger">Limpar Tudo</button>
                         </div>
-                        <button id=\"btn-force-sync\" style=\"background: #3b82f6; margin-top: 15px; font-size: 0.8rem; font-weight: bold;\">Sincronizar Dados Antigos Agora</button>
+                        <button id="btn-force-sync" style="background: #3b82f6; margin-top: 15px; font-size: 0.8rem; font-weight: bold;">Sincronizar Dados Antigos Agora</button>
                     </div>
-                    <div class=\"box\" style=\"margin-top: 20px;\">
-                        <h2><span class=\"icon\">📋</span> Histórico Detalhado</h2>
-                        <div class=\"table-wrapper\">\n                            <table>\n                                <thead>\n                                    <tr>\n                                        <th>Data</th>\n                                        <th>Descrição</th>\n                                        <th>Categoria</th>\n                                        <th>Valor</th>\n                                        <th>Ação</th>\n                                    </tr>\n                                </thead>\n                                <tbody id=\"tabela-lancamentos\"></tbody>\n                            </table>\n                        </div>\n                    </div>
+                    <div class="box" style="margin-top: 20px;">
+                        <h2><span class="icon">📋</span> Histórico Detalhado</h2>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Categoria</th>
+                                        <th>Valor</th>
+                                        <th>Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-lancamentos"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </section>
             </div>
         </main>
     </div>
 
-    <script src=\"script.js?v=3\"></script>
+    <script src="script.js?v=4"></script>
     <script>
         function showView(viewId) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
             
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            const activeNav = document.querySelector(`.nav-item[onclick*=\"${viewId}\"]`);
+            const activeNav = document.querySelector(`.nav-item[onclick*="${viewId}"]`);
             if (activeNav) activeNav.classList.add('active');
 
             const titles = {
