@@ -1,6 +1,5 @@
-
 const firebaseConfig = {
-  apiKey: "AIzaSyAQjfrjAThP69iKfX3iKn-czPNR_JHl2LQ",
+  apiKey: "«redacted»",
   authDomain: "controle-financeiro-8955a.firebaseapp.com",
   projectId: "controle-financeiro-8955a",
   storageBucket: "controle-financeiro-8955a.firebasestorage.app",
@@ -17,8 +16,16 @@ const NATUREZAS = {
 };
 
 let lancamentos = [];
+let agenda = [];
 let pieChart, lineChart;
 
+// DOM - General
+const statusDot = document.querySelector('#status-dot');
+const statusText = document.querySelector('#status-text');
+const diagBanner = document.querySelector('#diag-banner');
+const logContent = document.querySelector('#log-content');
+
+// DOM - Lançamentos
 const formLancamento = document.querySelector('#form-lancamento');
 const tipoSelect = document.querySelector('#tipo');
 const categoriaSelect = document.querySelector('#categoria');
@@ -28,10 +35,12 @@ const filterDateEnd = document.querySelector('#filter-date-end');
 const btnExport = document.querySelector('#btn-export');
 const btnClear = document.querySelector('#btn-clear');
 const btnForceSync = document.querySelector('#btn-force-sync');
-const statusDot = document.querySelector('#status-dot');
-const statusText = document.querySelector('#status-text');
-const diagBanner = document.querySelector('#diag-banner');
-const logContent = document.querySelector('#log-content');
+
+// DOM - Agenda
+const formAgenda = document.querySelector('#form-agenda');
+const agendaTipoSelect = document.querySelector('#agenda-tipo');
+const agendaCategoriaSelect = document.querySelector('#agenda-categoria');
+const tabelaAgenda = document.querySelector('#tabela-agenda');
 
 function log(msg) {
     const div = document.createElement('div');
@@ -43,36 +52,30 @@ function log(msg) {
 
 window.onload = async () => {
   log("Iniciando App...");
-  updateCategorias();
+  
+  // Setup Categorias
+  updateCategorias(tipoSelect, categoriaSelect);
+  updateCategorias(agendaTipoSelect, agendaCategoriaSelect);
   populateFilterCategories();
   
-  // Forced migration check
+  // Migration
   await migrateLocalDataToCloud();
   
+  // Listeners
   initRealtimeListener();
+  initAgendaListener();
   initCharts();
 };
 
 async function migrateLocalDataToCloud() {
   log("Checando cache local...");
-  
-  // SCANNER: List all keys to find the hidden data
   const allKeys = Object.keys(localStorage);
-  log(`Chaves encontradas no cache: ${allKeys.length > 0 ? allKeys.join(', ') : 'Nenhuma'}`);
-
-  const localData = localStorage.getItem('finance_//_data');
-  const localDataAlt = localStorage.getItem('finance_data');
-  
-  // Try to find any key that contains 'finance' or 'data' if the main ones fail
-  let dataToMigrate = localData || localDataAlt;
+  const localData = localStorage.getItem('finance_//_data') || localStorage.getItem('finance_data');
+  let dataToMigrate = localData;
   if (!dataToMigrate) {
     const fallbackKey = allKeys.find(k => k.toLowerCase().includes('finance') || k.toLowerCase().includes('lancamentos'));
-    if (fallbackKey) {
-      log(`Tentando chave alternativa encontrada: ${fallbackKey}`);
-      dataToMigrate = localStorage.getItem(fallbackKey);
-    }
+    if (fallbackKey) dataToMigrate = localStorage.getItem(fallbackKey);
   }
-
   if (dataToMigrate) {
     try {
       const parsedData = JSON.parse(dataToMigrate);
@@ -96,18 +99,14 @@ async function migrateLocalDataToCloud() {
 }
 
 function initRealtimeListener() {
-  log("Tentando conectar ao Google Cloud...");
+  log("Conectando ao Firestore (Lançamentos)...");
   db.collection('lancamentos').orderBy('data', 'desc')
     .onSnapshot((snapshot) => {
       statusDot.style.background = "#10b981";
       statusText.innerText = "Sincronizado";
       diagBanner.style.display = "none";
-      log(`Conectado! ${snapshot.size} itens carregados da nuvem.`);
-      
-      lancamentos = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      }));
+      log(`Lançamentos atualizados: ${snapshot.size} itens.`);
+      lancamentos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
       renderDashboard();
     }, (error) => {
       statusDot.style.background = "#ef4444";
@@ -117,11 +116,21 @@ function initRealtimeListener() {
     });
 }
 
+function initAgendaListener() {
+  log("Conectando ao Firestore (Agenda)...");
+  db.collection('agenda').orderBy('data', 'asc')
+    .onSnapshot((snapshot) => {
+      log(`Agenda atualizada: ${snapshot.size} contas.`);
+      agenda = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      renderAgenda();
+    });
+}
+
 async function adicionarAoEstado(lancamento) {
   try {
-    log("Enviando dado para nuvem...");
+    log("Salvando lançamento...");
     await db.collection('lancamentos').add(lancamento);
-    log("Salvo com sucesso!");
+    log("Lançamento salvo!");
   } catch (e) {
     log(`Erro: ${e.message}`);
     alert("Erro ao salvar. Verifique as Regras do Firebase.");
@@ -136,21 +145,23 @@ async function removerLancamento(id) {
   } catch (e) { log(`Erro: ${e.message}`); }
 }
 
-function updateCategorias() {
-  const tipo = tipoSelect.value;
-  const options = NATUREZAS[tipo].map(cat => `<option value="${cat}">${cat}</option>`).join('');
-  categoriaSelect.innerHTML = options;
+function updateCategorias(tipoEl, catEl) {
+  const tipo = tipoEl.value;
+  const options = NATUREZAS[tipo].map(cat => `<option value=\"${cat}\">${cat}</option>`).join('');
+  catEl.innerHTML = options;
 }
 
 function populateFilterCategories() {
   const allCats = [...new Set(NATUREZAS.entrada.concat(NATUREZAS.saida))];
-  filterCategoria.innerHTML = '<option value="all">Todas</option>' + 
-    allCats.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+  filterCategoria.innerHTML = '<option value=\"all\">Todas</option>' + 
+    allCats.map(cat => `<option value=\"${cat}\">${cat}</option>`).join('');
 }
 
-tipoSelect.addEventListener('change', updateCategorias);
-updateCategorias();
+// Listeners de Mudança de Tipo
+tipoSelect.addEventListener('change', () => updateCategorias(tipoSelect, categoriaSelect));
+agendaTipoSelect.addEventListener('change', () => updateCategorias(agendaTipoSelect, agendaCategoriaSelect));
 
+// FORMULÁRIO DE LANÇAMENTOS
 formLancamento.addEventListener('submit', async (e) => {
   e.preventDefault();
   const novo = {
@@ -162,24 +173,57 @@ formLancamento.addEventListener('submit', async (e) => {
   };
   await adicionarAoEstado(novo);
   formLancamento.reset();
-  updateCategorias();
+  updateCategorias(tipoSelect, categoriaSelect);
 });
 
-function getFilteredData() {
-  const cat = filterCategoria.value;
-  const start = filterDateStart.value;
-  const end = filterDateEnd.value;
-  return lancamentos.filter(l => {
-    const matchCat = cat === 'all' || l.categoria === cat;
-    const matchStart = !start || l.data >= start;
-    const matchEnd = !end || l.data <= end;
-    return matchCat && matchStart && matchEnd;
-  });
+// FORMULÁRIO DE AGENDA
+formAgenda.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const conta = {
+    descricao: document.querySelector('#agenda-descricao').value.trim(),
+    valor: parseFloat(document.querySelector('#agenda-valor').value),
+    tipo: agendaTipoSelect.value,
+    categoria: agendaCategoriaSelect.value,
+    data: document.querySelector('#agenda-data').value,
+    status: 'pendente'
+  };
+  try {
+    log("Agendando conta...");
+    await db.collection('agenda').add(conta);
+    log("Conta agendada com sucesso!");
+    formAgenda.reset();
+    updateCategorias(agendaTipoSelect, agendaCategoriaSelect);
+  } catch (e) {
+    log(`Erro ao agendar: ${e.message}`);
+  }
+});
+
+async function baixaAgenda(id) {
+  try {
+    log(`Dando baixa na conta ${id}...`);
+    const doc = await db.collection('agenda').doc(id).get();
+    if (!doc.exists) return;
+    
+    const dados = doc.data();
+    // Move para lançamentos
+    await db.collection('lancamentos').add({
+      descricao: `[BAIXA] ${dados.descricao}`,
+      valor: dados.valor,
+      tipo: dados.tipo,
+      categoria: dados.categoria,
+      data: new Date().toISOString().split('T')[0] // Data de hoje
+    });
+    
+    // Remove da agenda
+    await db.collection('agenda').doc(id).delete();
+    log("Conta liquidada e movida para lançamentos!");
+  } catch (e) { log(`Erro na baixa: ${e.message}`); }
 }
 
 function renderDashboard() {
   const data = getFilteredData();
   const tbody = document.querySelector('#tabela-lancamentos');
+  if(!tbody) return;
   tbody.innerHTML = '';
   let entries = 0, exits = 0;
   const catTotals = {};
@@ -195,10 +239,10 @@ function renderDashboard() {
       <td>${l.data.split('-').reverse().join('/')}</td>
       <td>${l.descricao}</td>
       <td>${l.categoria}</td>
-      <td class="${l.tipo === 'entrada' ? 'badge-entrada' : 'badge-saida'}">
+      <td class=\"${l.tipo === 'entrada' ? 'badge-entrada' : 'badge-saida'}\">
         ${l.tipo === 'entrada' ? '+' : '-'} ${l.valor.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}
       </td>
-      <td><button class="btn-deletar" onclick="removerLancamento('${l.id}')">Excluir</button></td>
+      <td><button class=\"btn-deletar\" onclick=\"removerLancamento('${l.id}')\">Excluir</button></td>
     `;
     tbody.appendChild(row);
   });
@@ -212,14 +256,67 @@ function renderDashboard() {
   updateCharts(data);
 }
 
+function renderAgenda() {
+  const tbody = document.querySelector('#tabela-agenda');
+  if(!tbody) return;
+  tbody.innerHTML = '';
+  
+  const hoje = new Date().toISOString().split('T')[0];
+
+  agenda.forEach(a => {
+    const isOverdue = a.data < hoje;
+    const statusBadge = isOverdue 
+        ? '<span style=\"color: #ef4444; font-weight: bold;\">Vencido</span>' 
+        : '<span style=\"color: #f59e0b; font-weight: bold;\">Pendente</span>';
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${a.data.split('-').reverse().join('/')}</td>
+      <td>${a.descricao}</td>
+      <td class=\"${a.tipo === 'entrada' ? 'badge-entrada' : 'badge-saida'}\">
+        ${a.valor.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}
+      </td>
+      <td>${statusBadge}</td>
+      <td>
+        <button class=\"btn-deletar\" style=\"background: #dcfce7; color: #166534; margin-right: 5px;\" onclick=\"baixaAgenda('${a.id}')\">Baixar</button>
+        <button class=\"btn-deletar\" onclick=\"removerLancamentoAgenda('${a.id}')\">Excluir</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+window.removerLancamentoAgenda = async (id) => {
+  try {
+    await db.collection('agenda').doc(id).delete();
+    log("Conta removida da agenda.");
+  } catch (e) { log(`Erro: ${e.message}`); }
+};
+
+window.baixaAgenda = baixaAgenda;
+
+function getFilteredData() {
+  const cat = filterCategoria.value;
+  const start = filterDateStart.value;
+  const end = filterDateEnd.value;
+  return lancamentos.filter(l => {
+    const matchCat = cat === 'all' || l.categoria === cat;
+    const matchStart = !start || l.data >= start;
+    const matchEnd = !end || l.data <= end;
+    return matchCat && matchStart && matchEnd;
+  });
+}
+
 function initCharts() {
-  const pieCtx = document.getElementById('chart-pie').getContext('2d');
+  const pieCtx = document.getElementById('chart-pie')?.getContext('2d');
+  if(!pieCtx) return;
   pieChart = new Chart(pieCtx, {
     type: 'doughnut',
     data: { labels: [], datasets: [{ data: [], backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#64748b'] }] },
     options: { plugins: { legend: { position: 'bottom' } } }
   });
-  const lineCtx = document.getElementById('chart-line').getContext('2d');
+  const lineCtx = document.getElementById('chart-line')?.getContext('2d');
+  if(!lineCtx) return;
   lineChart = new Chart(lineCtx, {
     type: 'line',
     data: { labels: [], datasets: [{ label: 'Saldo', data: [], borderColor: '#3b82f6', tension: 0.3, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)' }] },
@@ -228,6 +325,7 @@ function initCharts() {
 }
 
 function updateCharts(data) {
+  if(!pieChart || !lineChart) return;
   const exits = data.filter(l => l.tipo === 'saida');
   const catMap = {};
   exits.forEach(l => catMap[l.categoria] = (catMap[l.categoria] || 0) + l.valor);
@@ -251,9 +349,9 @@ function updateCharts(data) {
 
 btnExport.onclick = () => {
   const data = getFilteredData();
-  let csv = 'Data,Descrição,Categoria,Tipo,Valor\\n';
+  let csv = 'Data,Descrição,Categoria,Tipo,Valor\\\\n';
   data.forEach(l => {
-    csv += `${l.data},${l.descricao},${l.categoria},${l.tipo},${l.valor}\\n`;
+    csv += `${l.data},${l.descricao},${l.categoria},${l.tipo},${l.valor}\\\\n`;
   });
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = window.URL.createObjectURL(blob);
@@ -279,5 +377,5 @@ btnForceSync.onclick = async () => {
     log("Processo finalizado.");
 };
 
-[filterCategoria, filterDateStart, filterDateEnd].forEach(el => el.addEventListener('change', renderDashboard));
+[filterCategoria, filterDateStart, filterDateEnd].forEach(el => el?.addEventListener('change', renderDashboard));
 window.removerLancamento = removerLancamento;
