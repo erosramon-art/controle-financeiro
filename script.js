@@ -186,7 +186,7 @@ async function removerLancamento(id) {
     log(`Removendo item ${id}...`);
     await db.collection('lancamentos').doc(id).delete();
     log("Removido.");
-  } catch (e) { log(`Erro: ${e.// message}`); }
+  } catch (e) { log(`Erro: ${e.message}`); }
 }
 
 function updateCategorias(tipoEl, catEl) {
@@ -256,7 +256,7 @@ async function baixaAgenda(id) {
       userId: currentUser.uid
     });
     
-    await db.collection('agenda').doc(id).delete();
+    await db.// collection('agenda').doc(id).delete();
     log("Conta liquidada e movida para lançamentos!");
   } catch (e) { log(`Erro na baixa: ${e.message}`); }
 }
