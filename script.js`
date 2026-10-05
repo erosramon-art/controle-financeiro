@@ -67,6 +67,7 @@ function log(msg) {
 window.onload = () => {
   log("Iniciando Sistema de Autenticação...");
   
+  // Monitora o estado do usuário (Logado ou não)
   auth.onAuthStateChanged(user => {
     if (user) {
       log(`Usuário autenticado: ${user.email}`);
@@ -79,6 +80,7 @@ window.onload = () => {
     }
   });
 
+  // Setup Inicial de UI
   updateCategorias(tipoSelect, categoriaSelect);
   updateCategorias(agendaTipoSelect, agendaCategoriaSelect);
   populateFilterCategories();
@@ -94,11 +96,13 @@ function showMainApp() {
   mainApp.style.display = 'block';
   userEmailDisplay.innerText = currentUser.email;
   
+  // Inicia a carga de dados do usuário logado
   initRealtimeListener();
   initAgendaListener();
   initCharts();
 }
 
+// Login
 document.querySelector('#login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.querySelector('#login-email').value;
@@ -112,6 +116,7 @@ document.querySelector('#login-form').addEventListener('submit', async (e) => {
   }
 });
 
+// Cadastro
 document.querySelector('#signup-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.querySelector('#signup-email').value;
@@ -121,10 +126,11 @@ document.querySelector('#signup-form').addEventListener('submit', async (e) => {
     log("Conta criada com sucesso!");
   } catch (e) {
     alert("Erro ao cadastrar: " + e.message);
-    log("Erro de Cadastro: " + e.message);
+    log("Erro de Cadastro: " + e.// message);
   }
 });
 
+// Logout
 document.querySelector('#btn-logout').addEventListener('click', () => {
   auth.signOut();
   log("Saindo do sistema...");
@@ -136,6 +142,7 @@ document.querySelector('#btn-logout').addEventListener('click', () => {
 
 function initRealtimeListener() {
   log("Sincronizando lançamentos do seu perfil...");
+  // FILTRO CRÍTICO: Apenas documentos onde userId == UID do usuário logado
   db.collection('lancamentos')
     .where('userId', '==', currentUser.uid)
     .orderBy('data', 'desc')
@@ -156,6 +163,7 @@ function initRealtimeListener() {
 
 function initAgendaListener() {
   log("Sincronizando sua agenda...");
+  // FILTRO CRÍTICO: Apenas documentos onde userId == UID do usuário logado
   db.collection('agenda')
     .where('userId', '==', currentUser.uid)
     .orderBy('data', 'asc')
@@ -170,6 +178,7 @@ function initAgendaListener() {
 async function adicionarAoEstado(lancamento) {
   try {
     log("Salvando lançamento no seu perfil...");
+    // Adiciona o userId ao documento para isolamento
     await db.collection('lancamentos').add({
       ...lancamento,
       userId: currentUser.uid
@@ -186,7 +195,7 @@ async function removerLancamento(id) {
     log(`Removendo item ${id}...`);
     await db.collection('lancamentos').doc(id).delete();
     log("Removido.");
-  } catch (e) { log(`Erro: ${e.// message}`); }
+  } catch (e) { log(`Erro: ${e.message}`); }
 }
 
 function updateCategorias(tipoEl, catEl) {

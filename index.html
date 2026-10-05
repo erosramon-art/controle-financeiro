@@ -9,264 +9,287 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-    <div id="diag-banner" style="background: #ef4444; color: white; text-align: center; padding: 10px; font-weight: bold; font-size: 0.9rem; display: none;">
-        ⚠️ ERRO DE CONEXÃO: Verifique as Regras do Firebase (Modo Teste)
+    <!-- AUTH VIEW: LOGIN / SIGNUP -->
+    <div id="auth-view" class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <i class="fa-solid fa-wallet"></i>
+                <h1>Finanças Pro</h1>
+                <p>Gerencie suas contas com segurança</p>
+            </div>
+
+            <div id="login-form-container">
+                <form id="login-form">
+                    <div class="auth-field">
+                        <label>E-mail</label>
+                        <input type="email" id="login-email" placeholder="seu@email.com" required>
+                    </div>
+                    <div class="auth-field">
+                        <label>Senha</label>
+                        <input type="password" id="login-password" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="auth-btn">Entrar</button>
+                </form>
+                <div class="auth-footer">
+                    Não tem uma conta? <a href="#" onclick="toggleAuthMode(true)">Cadastre-se</a>
+                </div>
+            </div>
+
+            <div id="signup-form-container" style="display: none;">
+                <form id="signup-form">
+                    <div class="auth-field">
+                        <label>E-mail</label>
+                        <input type="email" id="signup-email" placeholder="seu@email.com" required>
+                    </div>
+                    <div class="auth-field">
+                        <label>Senha</label>
+                        <input type="password" id="signup-password" placeholder="Crie uma senha" required>
+                    </div>
+                    <button type="submit" class="auth-btn btn-signup">Criar Conta</button>
+                </form>
+                <div class="auth-footer">
+                    Já possui uma conta? <a href="#" onclick="toggleAuthMode(false)">Faça Login</a>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="app-layout">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-area">
-                    <i class="fa-solid fa-wallet"></i>
-                    <span>Finanças Pro</span>
-                </div>
-            </div>
+    <!-- MAIN APP (HIDDEN BY DEFAULT) -->
+    <div id="main-app" style="display: none;">
+        <div id="diag-banner" style="background: #ef4444; color: white; text-align: center; padding: 10px; font-weight: bold; font-size: 0.9rem; display: none;">
+            ⚠️ ERRO DE CONEXÃO: Verifique as Regras do Firebase (Modo Teste)
+        </div>
 
-            <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" onclick="showView('view-dashboard')">
-                    <i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span>
-                </a>
-                <a href="#" class="nav-item" onclick="showView('view-launching')">
-                    <i class="fa-solid fa-plus-circle"></i> <span>Lançamentos</span>
-                </a>
-                <a href="#" class="nav-item" onclick="showView('view-accounts')">
-                    <i class="fa-solid fa-calendar-days"></i> <span>Contas a Vencer</span>
-                </a>
-                <a href="#" class="nav-item" onclick="showView('view-reports')">
-                    <i class="fa-solid fa-list-check"></i> <span>Relatórios</span>
-                </a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <div id="sync-status" class="sync-status">
-                    <span id="status-dot"></span>
-                    <span id="status-text">Conectando...</span>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <header class="main-header">
-                <h1 id="page-title" class="main-title">Dashboard</h1>
-                <div id="debug-console" class="debug-console">
-                    <div class="debug-header">LOG DE SINCRONIZAÇÃO:</div>
-                    <div id="log-content"></div>
-                </div>
-            </header>
-
-            <div class="content-area">
-                <!-- VIEW: DASHBOARD -->
-                <section id="view-dashboard" class="view active">
-                    <div class="cards">
-                        <div class="card saldo highlight-card">
-                            <h3>Saldo Total Atual</h3>
-                            <p id="total-saldo">R$ 0,00</p>
-                            <div class="card-subtitle">Saldo consolidado em nuvem</div>
-                        </div>
-                        <div class="card entrada">
-                            <h3>Entradas</h3>
-                            <p id="total-entradas">R$ 0,00</p>
-                        </div>
-                        <div class="card saida">
-                            <h3>Saídas</h3>
-                            <p id="total-saidas">R$ 0,00</p>
-                        </div>
-                        <div class="card analytics">
-                            <h3>Maior Gasto</h3>
-                            <p id="top-category">-</p>
-                        </div>
+        <div class="app-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <div class="logo-area">
+                        <i class="fa-solid fa-wallet"></i>
+                        <span>Finanças Pro</span>
                     </div>
-                    <div class="charts-container">
-                        <div class="chart-box">
-                            <h3>Distribuição de Gastos</h3>
-                            <canvas id="chart-pie"></canvas>
-                        </div>
-                        <div class="chart-box">
-                            <h3>Evolução do Saldo</h3>
-                            <canvas id="chart-line"></canvas>
-                        </div>
+                </div>
+
+                <nav class="sidebar-nav">
+                    <a href="#" class="nav-item active" onclick="showView('view-dashboard')">
+                        <i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showView('view-launching')">
+                        <i class="fa-solid fa-plus-circle"></i> <span>Lançamentos</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showView('view-accounts')">
+                        <i class="fa-solid fa-calendar-days"></i> <span>Contas a Vencer</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showView('view-reports')">
+                        <i class="fa-solid fa-list-check"></i> <span>Relatórios</span>
+                    </a>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <div id="user-info" class="user-info">
+                        <i class="fa-solid fa-circle-user"></i>
+                        <span id="user-email">carregando...</span>
                     </div>
-                    
-                    <div class="dashboard-summaries">
-                        <div class="summary-box">
-                            <h3><i class="fa-solid fa-clock-rotate-left"></i> Últimos Lançamentos</h3>
-                            <div class="summary-table-wrapper">
-                                <table class="summary-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Data</th>
-                                            <th>Descrição</th>
-                                            <th>Valor</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="summary-last-launches"></tbody>
-                                </table>
+                    <button id="btn-logout" class="btn-logout">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sair
+                    </button>
+                    <div id="sync-status" class="sync-status">
+                        <span id="status-dot"></span>
+                        <span id="status-text">Conectando...</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <header class="main-header">
+                    <h1 id="page-title" class="main-title">Dashboard</h1>
+                    <div id="debug-console" class="debug-console">
+                        <div class="debug-header">LOG DE SINCRONIZAÇÃO:</div>
+                        <div id="log-content"></div>
+                    </div>
+                </header>
+
+                <div class="content-area">
+                    <!-- VIEW: DASHBOARD -->
+                    <section id="view-dashboard" class="view active">
+                        <div class="cards">
+                            <div class="card saldo highlight-card">
+                                <h3>Saldo Total Atual</h3>
+                                <p id="total-saldo">R$ 0,00</p>
+                                <div class="card-subtitle">Sincronizado com sua conta</div>
+                            </div>
+                            <div class="card entrada">
+                                <h3>Entradas</h3>
+                                <p id="total-entradas">R$ 0,00</p>
+                            </div>
+                            <div class="card saida">
+                                <h3>Saídas</h3>
+                                <p id="total-saidas">R$ 0,00</p>
+                            </div>
+                            <div class="card analytics">
+                                <h3>Maior Gasto</h3>
+                                <p id="top-category">-</p>
                             </div>
                         </div>
-                        <div class="summary-box">
-                            <h3><i class="fa-solid fa-calendar-check"></i> Próximos Vencimentos</h3>
-                            <div class="summary-table-wrapper">
-                                <table class="summary-table">
+                        <div class="charts-container">
+                            <div class="chart-box">
+                                <h3>Distribuição de Gastos</h3>
+                                <canvas id="chart-pie"></canvas>
+                            </div>
+                            <div class="chart-box">
+                                <h3>Evolução do Saldo</h3>
+                                <canvas id="chart-line"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- VIEW: LAUNCHING -->
+                    <section id="view-launching" class="view">
+                        <div class="box">
+                            <h2><span class="icon">➕</span> Novo Lançamento</h2>
+                            <form id="form-lancamento">
+                                <div class="form-group">
+                                    <label for="descricao">Descrição</label>
+                                    <input type="text" id="descricao" placeholder="Ex: Salário, Aluguel..." required>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="valor">Valor (R$)</label>
+                                        <input type="number" id="valor" step="0.01" min="0.01" placeholder="0.00" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="tipo">Tipo</label>
+                                        <select id="tipo" required>
+                                            <option value="entrada">Entrada (+)</option>
+                                            <option value="saida">Saída (-)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="categoria">Natureza da Operação</label>
+                                        <select id="categoria" required></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="data">Data</label>
+                                        <input type="date" id="data" required>
+                                    </div>
+                                </div>
+                                <button type="submit" id="btn-adicionar">Registrar Lançamento</button>
+                            </form>
+                        </div>
+                    </section>
+
+                    <!-- VIEW: ACCOUNTS -->
+                    <section id="view-accounts" class="view">
+                        <div class="box">
+                            <h2><span class="icon">📅</span> Agendar Nova Conta</h2>
+                            <form id="form-agenda">
+                                <div class="form-group">
+                                    <label for="agenda-descricao">Descrição da Conta</label>
+                                    <input type="text" id="agenda-descricao" placeholder="Ex: Conta de Luz, Parcela Carro..." required>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="agenda-valor">Valor (R$)</label>
+                                        <input type="number" id="agenda-valor" step="0.01" min="0.01" placeholder="0.00" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="agenda-tipo">Tipo</label>
+                                        <select id="agenda-tipo" required>
+                                            <option value="saida">A Pagar (Saída)</option>
+                                            <option value="entrada">A Receber (Entrada)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="agenda-data">Data de Vencimento</label>
+                                        <input type="date" id="agenda-data" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="agenda-categoria">Categoria</label>
+                                        <select id="agenda-categoria" required></select>
+                                    </div>
+                                </div>
+                                <button type="submit" id="btn-agenda">Agendar Conta</button>
+                            </form>
+                        </div>
+
+                        <div class="box" style="margin-top: 20px;">
+                            <h2><span class="icon">📋</span> Próximos Vencimentos</h2>
+                            <div class="table-wrapper">
+                                <table>
                                     <thead>
                                         <tr>
                                             <th>Vencimento</th>
                                             <th>Descrição</th>
                                             <th>Valor</th>
+                                            <th>Status</th>
+                                            <th>Ações</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="summary-next-accounts"></tbody>
+                                    <tbody id="tabela-agenda"></tbody>
                                 </table>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
 
-                <!-- VIEW: LAUNCHING -->
-                <section id="view-launching" class="view">
-                    <div class="box">
-                        <h2><span class="icon">➕</span> Novo Lançamento</h2>
-                        <form id="form-lancamento">
-                            <div class="form-group">
-                                <label for="descricao">Descrição</label>
-                                <input type="text" id="descricao" placeholder="Ex: Salário, Aluguel..." required>
-                            </div>
-                            <div class="form-row">
+                    <!-- VIEW: REPORTS -->
+                    <section id="view-reports" class="view">
+                        <div class="box">
+                            <h2><span class="icon">🔍</span> Filtros e Relatórios</h2>
+                            <div class="filter-group">
                                 <div class="form-group">
-                                    <label for="valor">Valor (R$)</label>
-                                    <input type="number" id="valor" step="0.01" min="0.01" placeholder="0.00" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="tipo">Tipo</label>
-                                    <select id="tipo" required>
-                                        <option value="entrada">Entrada (+)</option>
-                                        <option value="saida">Saída (-)</option>
+                                    <label>Categoria</label>
+                                    <select id="filter-categoria">
+                                        <option value="all">Todas</option>
                                     </select>
                                 </div>
-                            </div>
-                            <div class="form-row">
                                 <div class="form-group">
-                                    <label for="categoria">Natureza da Operação</label>
-                                    <select id="categoria" required></select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="data">Data</label>
-                                    <input type="date" id="data" required>
+                                    <label>Período</label>
+                                    <div class="date-range">
+                                        <input type="date" id="filter-date-start">
+                                        <span>até</span>
+                                        <input type="date" id="filter-date-end">
+                                    </div>
                                 </div>
                             </div>
-                            <button type="submit" id="btn-adicionar">Registrar Lançamento</button>
-                        </form>
-                    </div>
-                </section>
-
-                <!-- VIEW: ACCOUNTS -->
-                <section id="view-accounts" class="view">
-                    <div class="box">
-                        <h2><span class="icon">📅</span> Agendar Nova Conta</h2>
-                        <form id="form-agenda">
-                            <div class="form-group">
-                                <label for="agenda-descricao">Descrição da Conta</label>
-                                <input type="text" id="agenda-descricao" placeholder="Ex: Conta de Luz, Parcela Carro..." required>
+                            <div class="action-buttons">
+                                <button id="btn-export" class="btn-secondary">Exportar CSV</button>
+                                <button id="btn-clear" class="btn-danger">Limpar Tudo</button>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="agenda-valor">Valor (R$)</label>
-                                    <input type="number" id="agenda-valor" step="0.01" min="0.01" placeholder="0.00" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="agenda-tipo">Tipo</label>
-                                    <select id="agenda-tipo" required>
-                                        <option value="saida">A Pagar (Saída)</option>
-                                        <option value="entrada">A Receber (Entrada)</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="agenda-data">Data de Vencimento</label>
-                                    <input type="date" id="agenda-data" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="agenda-categoria">Categoria</label>
-                                    <select id="agenda-categoria" required></select>
-                                </div>
-                            </div>
-                            <button type="submit" id="btn-agenda">Agendar Conta</button>
-                        </form>
-                    </div>
-
-                    <div class="box" style="margin-top: 20px;">
-                        <h2><span class="icon">📋</span> Próximos Vencimentos</h2>
-                        <div class="table-wrapper">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Vencimento</th>
-                                        <th>Descrição</th>
-                                        <th>Valor</th>
-                                        <th>Status</th>
-                                        <th>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabela-agenda"></tbody>
-                            </table>
+                            <button id="btn-force-sync" style="background: #3b82f6; margin-top: 15px; font-size: 0.8rem; font-weight: bold;">Sincronizar Dados Antigos Agora</button>
                         </div>
-                    </div>
-                </section>
-
-                <!-- VIEW: REPORTS -->
-                <section id="view-reports" class="view">
-                    <div class="box">
-                        <h2><span class="icon">🔍</span> Filtros e Relatórios</h2>
-                        <div class="filter-group">
-                            <div class="form-group">
-                                <label>Categoria</label>
-                                <select id="filter-categoria">
-                                    <option value="all">Todas</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Período</label>
-                                <div class="date-range">
-                                    <input type="date" id="filter-date-start">
-                                    <span>até</span>
-                                    <input type="date" id="filter-date-end">
-                                </div>
+                        <div class="box" style="margin-top: 20px;">
+                            <h2><span class="icon">📋</span> Histórico Detalhado</h2>
+                            <div class="table-wrapper">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Descrição</th>
+                                            <th>Categoria</th>
+                                            <th>Valor</th>
+                                            <th>Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabela-lancamentos"></tbody>
+                                </table>
                             </div>
                         </div>
-                        <div class="action-buttons">
-                            <button id="btn-export" class="btn-secondary">Exportar CSV</button>
-                            <button id="btn-clear" class="btn-danger">Limpar Tudo</button>
-                        </div>
-                        <button id="btn-force-sync" style="background: #3b82f6; margin-top: 15px; font-size: 0.8rem; font-weight: bold;">Sincronizar Dados Antigos Agora</button>
-                    </div>
-                    <div class="box" style="margin-top: 20px;">
-                        <h2><span class="icon">📋</span> Histórico Detalhado</h2>
-                        <div class="table-wrapper">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Data</th>
-                                        <th>Descrição</th>
-                                        <th>Categoria</th>
-                                        <th>Valor</th>
-                                        <th>Ação</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabela-lancamentos"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </main>
+                    </section>
+                </div>
+            </main>
+        </div>
     </div>
 
-    <script src="script.js?v=4"></script>
+    <script src="script.js?v=5"></script>
     <script>
         function showView(viewId) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -283,6 +306,11 @@
                 'view-reports': 'Relatórios e Histórico'
             };
             document.getElementById('page-title').innerText = titles[viewId];
+        }
+
+        function toggleAuthMode(isSignup) {
+            document.getElementById('login-form-container').style.display = isSignup ? 'none' : 'block';
+            document.getElementById('signup-form-container').style.display = isSignup ? 'block' : 'none';
         }
     </script>
 </body>

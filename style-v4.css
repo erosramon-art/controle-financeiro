@@ -398,3 +398,109 @@ th {
   font-size: 0.7rem; 
 }
 .summary-table td { padding: 10px; border-bottom: 1px solid #f8fafc; color: #475569; }
+
+
+/* AUTHENTICATION VIEW */
+.auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+.auth-card {
+  background: white;
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  border: 1px solid #f1f5f9;
+}
+.auth-header {
+  margin-bottom: 30px;
+}
+.auth-header i {
+  font-size: 3rem;
+  color: #3b82f6;
+  margin-bottom: 15px;
+}
+.auth-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 5px;
+}
+.auth-header p {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+.auth-field {
+  text-align: left;
+  margin-bottom: 20px;
+}
+.auth-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #475569;
+}
+.auth-field input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+.auth-btn {
+  width: 100%;
+  padding: 14px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 10px;
+}
+.auth-btn:hover { background: #2563eb; transform: translateY(-1px); }
+.btn-signup { background: #10b981; }
+.btn-signup:hover { background: #059669; }
+.auth-footer {
+  margin-top: 20px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+.auth-footer a { color: #3b82f6; text-decoration: none; font-weight: 600; }
+
+/* USER INFO & LOGOUT */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  color: #475569;
+  font-weight: 500;
+}
+.btn-logout {
+  width: 100%;
+  padding: 10px;
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 20px;
+}
+.btn-logout:hover { background: #fca5a5; }
