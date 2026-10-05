@@ -1,5 +1,5 @@
 const firebaseConfig = {
-  apiKey: "«redacted»",
+  apiKey: "AIzaSyAQjfrjAThP69iKfX3iKn-czPNR_JHl2LQ",
   authDomain: "controle-financeiro-8955a.firebaseapp.com",
   projectId: "controle-financeiro-8955a",
   storageBucket: "controle-financeiro-8955a.firebasestorage.app",
@@ -256,7 +256,7 @@ async function baixaAgenda(id) {
       userId: currentUser.uid
     });
     
-    await db.// collection('agenda').doc(id).delete();
+    await db.collection('agenda').doc(id).delete();
     log("Conta liquidada e movida para lançamentos!");
   } catch (e) { log(`Erro na baixa: ${e.message}`); }
 }
@@ -419,9 +419,9 @@ function updateCharts(data) {
 
 btnExport.onclick = () => {
   const data = getFilteredData();
-  let csv = 'Data,Descrição,Categoria,Tipo,Valor\\\\n';
+  let csv = 'Data,Descrição,Categoria,Tipo,Valor\\\\\\\\n';
   data.forEach(l => {
-    csv += `${l.data},${l.descricao},${l.categoria},${l.tipo},${l.valor}\\\\n`;
+    csv += `${l.data},${l.descricao},${l.categoria},${l.tipo},${l.valor}\\\\\\\\n`;
   });
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = window.URL.createObjectURL(blob);
