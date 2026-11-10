@@ -1,139 +1,151 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle Financeiro Pro</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Controle Financeiro Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: #0f172a;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .badge-entrada { background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+        .badge-saida { background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+    </style>
 </head>
-<body>
-  <div class="container">
-    <h1 class="main-title">Dashboard Financeiro Pro</h1>
+<body class="p-4 md:p-8">
+    <!-- Proteção de Acesso -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script>
+        // Configurações mínimas para checar auth
+        const firebaseConfig = {
+          apiKey: "SUA_API_KEY_AQUI",
+          authDomain: "ecoa2-5196f.firebaseapp.com",
+          projectId: "ecoa2-5196f",
+          storageBucket: "ecoa2-5196f.appspot.com",
+          messagingSenderId: "SUBSTITUA_AQUI",
+          appId: "SUBSTITUA_AQUI"
+        };
+        firebase.initializeApp(firebaseConfig);
+        
+        firebase.auth().onAuthStateChanged(user => {
+            if (!user) {
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
 
-    <!-- Summary Cards -->
-    <div class="cards">
-      <div class="card entrada">
-        <h3>Entradas</h3>
-        <p id="total-entradas">R$ 0,00</p>
-      </div>
-      <div class="card saida">
-        <h3>Saídas</h3>
-        <p id="total-saidas">R$ 0,00</p>
-      </div>
-      <div class="card saldo">
-        <h3>Saldo Total</h3>
-        <p id="total-saldo">R$ 0,00</p>
-      </div>
-      <div class="card analytics">
-        <h3>Maior Gasto</h3>
-        <p id="top-category">-</p>
-      </div>
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold">Meu <span class="text-blue-500">Financeiro</span></h1>
+                <p class="text-slate-400">Gestão de Entradas e Saídas</p>
+            </div>
+            <button id="btn-logout" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-all text-sm border border-slate-600">Sair</button>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="glass p-6 rounded-2xl text-center">
+                <p class="text-slate-400 text-sm mb-1">Total Entradas</p>
+                <h2 id="total-entradas" class="text-2xl font-bold text-emerald-400">R$ 0,00</h2>
+            </div>
+            <div class="glass p-6 rounded-2xl text-center">
+                <p class="text-slate-400 text-sm mb-1">Total Saídas</p>
+                <h2 id="total-saidas" class="text-2xl font-bold text-red-400">R$ 0,00</h2>
+            </div>
+            <div class="glass p-6 rounded-2xl text-center">
+                <p class="text-slate-400 text-sm mb-1">Saldo Atual</p>
+                <h2 id="total-saldo" class="text-2xl font-bold text-blue-400">R$ 0,00</h2>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Coluna de Cadastro -->
+            <div class="glass p-6 rounded-2xl h-fit">
+                <h3 class="text-xl font-semibold mb-4">Novo Lançamento</h3>
+                <form id="form-lancamento" class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Descrição</label>
+                        <input type="text" id="descricao" required class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 outline-none focus:border-blue-500 transition-all">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Valor</label>
+                            <input type="number" id="valor" step="0.01" required class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 outline-none focus:border-blue-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Data</label>
+                            <input type="date" id="data" required class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 outline-none focus:border-blue-500 transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Tipo</label>
+                        <select id="tipo" class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 outline-none focus:border-blue-500 transition-all">
+                            <option value="entrada">Entrada (+)</option>
+                            <option value="saida">Saída (-)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Categoria</label>
+                        <select id="categoria" class="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 outline-none focus:border-blue-500 transition-all"></select>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-all shadow-lg shadow-blue-900/20">Adicionar</button>
+                </form>
+            </div>
+
+            <!-- Coluna de Tabela -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="glass p-6 rounded-2xl">
+                    <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                        <h3 class="text-xl font-semibold">Histórico</h3>
+                        <div class="flex gap-2">
+                            <button id="btn-export" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs transition-all">Exportar CSV</button>
+                            <button id="btn-clear" class="px-3 py-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded text-xs transition-all">Limpar Tudo</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="text-slate-500 border-b border-slate-700">
+                                    <th class="pb-2 font-medium">Data</th>
+                                    <th class="pb-2 font-medium">Descrição</th>
+                                    <th class="pb-2 font-medium">Categoria</th>
+                                    <th class="pb-2 font-medium">Valor</th>
+                                    <th class="pb-2 font-medium">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-lancamentos" class="divide-y divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass p-6 rounded-2xl">
+                        <h3 class="text-lg font-semibold mb-4 text-center">Gastos por Categoria</h3>
+                        <canvas id="chart-pie"></canvas>
+                    </div>
+                    <div class="glass p-6 rounded-2xl">
+                        <h3 class="text-lg font-semibold mb-4 text-center">Evolução de Saldo</h3>
+                        <canvas id="chart-line"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="dashboard-grid">
-      <!-- Left Column: Input and Filters -->
-      <div class="col-left">
-        <div class="box">
-          <h2><span class="icon">➕</span> Novo Lançamento</h2>
-          <form id="form-lancamento">
-            <div class="form-group">
-              <label for="descricao">Descrição</label>
-              <input type="text" id="descricao" placeholder="Ex: Salário, Aluguel..." required>
-            </div>
-            
-            <div class="form-row">
-              <div class="form-group">
-                <label for="valor">Valor (R$)</label>
-                <input type="number" id="valor" step="0.01" min="0.01" placeholder="0.00" required>
-              </div>
-
-              <div class="form-group">
-                <label for="tipo">Tipo</label>
-                <select id="tipo" required>
-                  <option value="entrada">Entrada (+)</option>
-                  <option value="saida">Saída (-)</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="categoria">Natureza da Operação</label>
-                <select id="categoria" required>
-                  <!-- Populated by JS based on type -->
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="data">Data</label>
-                <input type="date" id="data" required>
-              </div>
-            </div>
-
-            <button type="submit" id="btn-adicionar">Registrar Lançamento</button>
-          </form>
-        </div>
-
-        <div class="box">
-          <h2><span class="icon">🔍</span> Filtros e Relatórios</h2>
-          <div class="filter-group">
-            <div class="form-group">
-              <label>Categoria</label>
-              <select id="filter-categoria">
-                <option value="all">Todas</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Período</label>
-              <div class="date-range">
-                <input type="date" id="filter-date-start">
-                <span>até</span>
-                <input type="date" id="filter-date-end">
-              </div>
-            </div>
-          </div>
-          <div class="action-buttons">
-            <button id="btn-export" class="btn-secondary">Exportar CSV</button>
-            <button id="btn-clear" class="btn-danger">Limpar Tudo</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Column: Charts and Table -->
-      <div class="col-right">
-        <div class="charts-container">
-          <div class="chart-box">
-            <h3>Distribuição de Gastos</h3>
-            <canvas id="chart-pie"></canvas>
-          </div>
-          <div class="chart-box">
-            <h3>Evolução do Saldo</h3>
-            <canvas id="chart-line"></canvas>
-          </div>
-        </div>
-
-        <div class="box">
-          <h2><span class="icon">📋</span> Histórico Detalhado</h2>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Descrição</th>
-                  <th>Categoria</th>
-                  <th>Valor</th>
-                  <th>Ação</th>
-                </tr>
-              </thead>
-              <tbody id="tabela-lancamentos"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="script.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
